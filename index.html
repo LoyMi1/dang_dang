@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Will You Marry Me?</title>
+<style>
+  :root{
+    --bg: #0b1020;
+    --card: linear-gradient(135deg,#1f2937 0%, #111827 100%);
+    --accent: #ffd166;
+    --muted: #94a3b8;
+    --glass: rgba(255,255,255,0.03);
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:
+      radial-gradient(600px 300px at 10% 10%, rgba(255,209,102,0.05), transparent 10%),
+      radial-gradient(400px 200px at 90% 90%, rgba(99,102,241,0.04), transparent 10%),
+      var(--bg);
+    color:#e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .stage{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    padding:20px;
+  }
+
+  .proposal-card{
+    width:90%;
+    max-width:360px;
+    border-radius:18px;
+    padding:26px;
+    background:var(--card);
+    box-shadow: 0 10px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    text-align:center;
+    backdrop-filter: blur(6px) saturate(110%);
+    position:relative;
+    z-index:10;
+  }
+
+  .proposal-card h1{
+    margin:0 0 12px;
+    font-size:5vw; /* responsive font */
+    letter-spacing:0.4px;
+  }
+  .proposal-card p{
+    margin:0 0 18px;
+    color:var(--muted);
+    font-size:4vw; /* responsive font */
+  }
+
+  .buttons{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  button.base-btn{
+    border:0;
+    padding:16px 24px;
+    border-radius:12px;
+    font-weight:700;
+    cursor:pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.55);
+    user-select:none;
+    font-size:4.5vw;
+  }
+
+  .yes-btn{
+    background: linear-gradient(90deg,#ffd166,#ff9f1c);
+    color:#1b1b17;
+  }
+
+  .no-btn{
+    background: linear-gradient(90deg,#94a3b8,#64748b);
+    color:#08101a;
+  }
+
+  .floating-pair{
+    position:absolute;
+    min-width:220px;
+    border-radius:16px;
+    padding:12px;
+    background: var(--glass);
+    border: 1px solid rgba(255,255,255,0.03);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    backdrop-filter: blur(6px);
+    animation: floaty 6s ease-in-out infinite;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.55);
+    color: #f1f5f9;
+  }
+
+  @keyframes floaty{
+    0%{ transform: translateY(0px) rotate(0.001deg); }
+    50%{ transform: translateY(-6px) rotate(0.001deg); }
+    100%{ transform: translateY(0px) rotate(0.001deg); }
+  }
+
+  .mini-text{
+    font-size:3.5vw;
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <div class="proposal-card" id="mainCard" role="dialog" aria-labelledby="qTitle" aria-describedby="qSub">
+    <h1 id="qTitle">Will you marry me?</h1>
+    <p id="qSub">Choose carefully 💍</p>
+    <div class="buttons">
+      <button class="base-btn yes-btn" id="yesMain">Yes</button>
+      <button class="base-btn no-btn" id="noMain">No</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const stage = document.getElementById('stage');
+  const yesMain = document.getElementById('yesMain');
+  const noMain  = document.getElementById('noMain');
+
+  let spawnCount = 0;
+  const maxSpawn = 25; // lower for mobile performance
+
+  function randomPosition(w=220, h=100){
+    const pad = 10;
+    const sRect = stage.getBoundingClientRect();
+    return {
+      left: Math.max(pad, Math.random()*(sRect.width - w - pad*2) + pad),
+      top:  Math.max(pad, Math.random()*(sRect.height - h - pad*2) + pad)
+    };
+  }
+
+  function spawnPair() {
+    if (spawnCount >= maxSpawn) return;
+    spawnCount++;
+
+    const pair = document.createElement('div');
+    pair.className = 'floating-pair';
+    pair.style.width = '220px';
+
+    const msg = document.createElement('div');
+    msg.className = 'mini-text';
+    msg.textContent = 'Are you sure?';
+    pair.appendChild(msg);
+
+    const btnWrap = document.createElement('div');
+    btnWrap.style.display = 'flex';
+    btnWrap.style.gap = '8px';
+
+    const yes = document.createElement('button');
+    yes.className = 'base-btn yes-btn';
+    yes.textContent = 'Yes';
+    const yesScale = 1 + Math.min(spawnCount*0.18, 1.5);
+    yes.style.transform = `scale(${yesScale})`;
+    yes.addEventListener('click', onYesClicked);
+
+    const no = document.createElement('button');
+    no.className = 'base-btn no-btn';
+    no.textContent = 'No';
+    const noScale = Math.max(1 - spawnCount*0.12, 0.35);
+    no.style.transform = `scale(${noScale})`;
+    no.addEventListener('mouseenter', () => dodge(no));
+    no.addEventListener('click', onNoClicked);
+
+    btnWrap.appendChild(yes);
+    btnWrap.appendChild(no);
+    pair.appendChild(btnWrap);
+
+    const pos = randomPosition(220, 100);
+    pair.style.left = pos.left + 'px';
+    pair.style.top = pos.top + 'px';
+
+    stage.appendChild(pair);
+  }
+
+  function dodge(button){
+    const dx = (Math.random()*2 -1) * 100;
+    const dy = (Math.random()*2 -1) * 60;
+    button.style.transform = `translate(${dx}px, ${dy}px)`;
+    setTimeout(() => {
+      button.style.transform = '';
+    }, 700);
+  }
+
+  function onNoClicked(){
+    spawnPair();
+  }
+
+  function onYesClicked(){
+    document.querySelectorAll('.floating-pair').forEach(n => n.remove());
+    showCelebration();
+  }
+
+function showCelebration(){
+    document.body.style.backgroundImage = "url('wedding_bg.jpg')"; // <-- your image
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundRepeat = "no-repeat";
+
+    document.body.innerHTML = "";
+
+    const msg = document.createElement('div');
+    msg.style.position = "fixed";
+    msg.style.inset = "0";
+    msg.style.display = "flex";
+    msg.style.alignItems = "center";
+    msg.style.justifyContent = "center";
+    msg.style.flexDirection = "column";
+    // Remove blur and dark overlay for clear background
+    msg.style.background = "transparent"; 
+    // msg.style.backdropFilter = "blur(4px)"; // remove this line
+    msg.style.color = "white";
+    msg.style.textAlign = "center";
+
+    const title = document.createElement('h1');
+    title.textContent = "YOU ARE MARRIED ❤️💍";
+    title.style.fontSize = "10vw"; // mobile responsive
+
+    const sub = document.createElement('h2');
+    sub.textContent = "No escape now!";
+    sub.style.fontSize = "6vw"; // mobile responsive
+
+    msg.appendChild(title);
+    msg.appendChild(sub);
+    document.body.appendChild(msg);
+
+    // floating hearts/confetti
+    function confettiBurst(){
+      for(let i=0;i<20;i++){
+        const c = document.createElement('div');
+        c.textContent = ['💖','💍','✨','🎉'][Math.floor(Math.random()*4)];
+        c.style.position = 'fixed';
+        c.style.left = Math.random()*100 + '%';
+        c.style.top = Math.random()*100 + '%';
+        c.style.fontSize = (6+Math.random()*18)+'vw';
+        c.style.opacity = 0;
+        c.style.pointerEvents = 'none';
+        c.style.transform = `translateY(0px) rotate(${Math.random()*360}deg)`;
+        c.style.transition = 'opacity 1s ease, transform 1.2s ease-out';
+        document.body.appendChild(c);
+        requestAnimationFrame(()=>{
+          c.style.opacity = 1;
+          c.style.transform = `translateY(${ -100 - Math.random()*100 }px) rotate(${Math.random()*720}deg)`;
+        });
+        setTimeout(()=> c.remove(), 2500);
+      }
+    }
+
+    confettiBurst();
+    setTimeout(confettiBurst, 500);
+    setTimeout(confettiBurst, 1000);
+}
+
+
+  noMain.addEventListener('click', onNoClicked);
+  noMain.addEventListener('mouseenter', () => dodge(noMain));
+  yesMain.addEventListener('click', onYesClicked);
+
+})();
+</script>
+</body>
+</html>
